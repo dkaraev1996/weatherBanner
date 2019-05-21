@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <title></title>
+  <style media="screen">
+    #canvas1 {
+      width: 900px;
+      height: 200px;
+      background-color: rgb(154, 109, 170);
+      /* position: fixed; */
+      z-index: -1;
+      top: 1em;
+      left: 20%;
+    }
+    .icon{
+      position: absolute;
+      width: 100px;
+      height:100px;
+      top:200px;
+    }
+  </style>
+</head>
+<body>
+  <p class="icon"></p>
+  <p class="weather"></p>
+  <canvas id="canvas1" width="900" height="200"></canvas>
+  <script src="weatherAPIkey.js" charset="utf-8"></script>
+  <script type="text/javascript">
+    // document.body.style.zoom=2.0
+    //https://codebeautify.org/jsonviewer
+    //httpssun://developer.mozilla.org/en-US/docs/Web/API/Geolocation_API
+// https://openweathermap.org/weather-conditions
+    // let lat=45, lon=-93
+    const atlas = new Image()
+    atlas.src = "textureAtlas.png"
+    //load atlas json
+    let spriteData = {}
+    let xhrSprites = new XMLHttpRequest()
+    xhrSprites.open("GET", 'textureAtlas.json')
+    xhrSprites.responseType = 'text'
+    xhrSprites.onload = event => {
+      if (xhrSprites.status === 200){
+        spriteData = JSON.parse(xhrSprites.responseText)
+        // console.log(spriteData);
+        // const b = items.find((item) => item.name === 'b')
+        // let cd = spriteData.frames.find((sprite) => sprite.filename === 'cloudD.png')
+        // console.log(cd.frame.h)
+        createSprites()
+      }else {
+        console.log("Error code: " + xhrSprites.status);
+      }
+    }
+    xhrSprites.send()
+    let clouds = []
+    //primary sprite
+    let Sprite = {
+      sx: 0,
+      sy: 0,
+      dx: Math.random() * 580,
+      dy: Math.random() * 380,
+      spriteW: 53,
+      spriteH: 63,
+      vx: 0,
+      vy: 0,
+      currentFrame: 0,
+      frames: 1,
+      cols: 1,
+      offsetX: 0,
+      offsetY: 0,
+
+      update: function() {
+        this.dy += this.vy
+        if (this.dy > canvas.height) {
+          this.dy = -this.spriteH
+        }
+        this.dx += this.vx
+        if (this.dx > canvas.width) {
+          this.dx = -this.spriteW
+        }
+      },
+      display: function() {
+        this.sx = Math.floor(this.currentFrame % this.cols) * this.spriteW + this.offsetX
+        this.sy = Math.floor(this.currentFrame / this.cols) * this.spriteH + this.offsetY
+        this.currentFrame = this.currentFrame + 1
+        if (this.currentFrame == this.frames) {
+          this.currentFrame = 0
+        }
+        // this.currentFrame = (this.currentFrame + 1) % this.frames
+      }
+    }
+
+    function createSprites(){
+      let numClouds = 50
+      let cd = spriteData.frames.find((sprite) => sprite.filename === 'cloudD.png')
+      // let cn = spriteData.frames.find((sprite) => sprite.filename === 'cloudN.png')
+      console.log(cd.frame.x)
+      for (var i = 0; i < numClouds; i++) {
+        clouds[i] = Object.create(Sprite)
+        clouds[i].sx = cd.frame.x
+        clouds[i].sy = cd.frame.y
+        clouds[i].offsetX = cd.frame.x
+        clouds[i].offsetY = cd.frame.y
+        clouds[i].dx = Math.random()*canvas.width
+        clouds[i].dy = Math.random()*canvas.height
+        clouds[i].spriteW = cd.frame.w
+        clouds[i].spriteH = cd.frame.h
+        clouds[i].vx = 0.5
+        clouds[i].vy = 0
+      }
+    }
+    //use the load callback to load the file BEFORE calling the JSON server API
+    atlas.addEventListener('load', imagesLoaded, false)
+
+    let lat, lon
+    let p = document.querySelector('p.weather')
+
+    //empty object to hold the JSON data
+    let weather = {};
+    //create the new xhr object
+    let xhr = new XMLHttpRequest();
+    //use XHR to get the json data from the server
+    // xhr.open("GET", `https://api.openweathermap.org/data/2.5/weather?zip=55129,us&appid=${apiKey}&units=imperial`, true);
+    xhr.open("GET", `https://api.openweathermap.org/data/2.5/weather?lat=45.0959889&lon=-93.3974557&appid=${apiKey}&units=imperial`, true);
+    //set the xhr type
+    xhr.responseType = 'text';
+
+    function test(){
+      console.log("test success");
+    }
+    //use the onload event to verify loading or provide the error response
+    xhr.onload = event => {
+      //verify the data has loaded properly.
+      //200 is success
+      if (xhr.status === 200) {
+        //Copy the JSON file into the weather variable
+        weather = JSON.parse(xhr.responseText)
+        console.log("JSON data loaded")
+        console.log(weather)
+
+        console.log(weather.weather[0].icon);
+        //Now you can use this data to view the library contents
+        // console.log(weather.list[10].main.temp)
+        // p.textContent = weather.weather[0].description
+        let str = ""
+        // for (var i = h; i < h + 5; i++) {
+        //   temps.push(Math.round(weather.list[i].main.temp))
+        //   str += Math.round(weather.list[i].main.temp) + " degrees  " +
+        //     weather.list[i].weather[0].description + "<br>"
+        // }
+        let location = weather.name
+        let temp = Math.round(weather.main.temp)
+        let wind = Math.round(weather.wind.speed)
+        let time = new Date(weather.dt*1000)
+        let hrs = time.getHours()
+        let minutes = time.getMinutes()
+        if (minutes<10){ minutes = `0${minutes}`}
+        let timeString = ""
+        if (hrs==12){
+          timeString = `12:${minutes} PM`
+        }else if (hrs>12){
+          timeString = `${hrs-12}:${minutes} PM`
+        } else if (hrs==0){
+          timeString = `12:${minutes} AM`
+        } else {
+          timeString = `${hrs}:${minutes} AM`
+        }
+        str = `${location}  ${temp}&#0176;  wind: ${wind}mph<br>${time}<br>${timeString}`
+        //sun location will be percent of canvas between sunrise/sunset
+        //sunrise is 10%height. peak is 90%height
+        p.innerHTML = str
+        plot()
+      } else {
+        p.textContent = "Error code: " + xhr.status
+      }
+    }
+
+    function imagesLoaded(){
+      //once image atlas is loaded then grab the JSON data
+      xhr.send()
+    }
+    //Send the request to load the file
+    // xhr.send();
+
+    const canvas = document.querySelector('#canvas1')
+    const context = canvas.getContext('2d')
+    canvas.width = 900; //horizontal resolution (?) - increase for better looking text
+    canvas.height = 200; //vertical resolution (?) - increase for better looking text
+    canvas.style.width = 900; //actual width of canvas
+    canvas.style.height = 200; //actual height of canvas
+    let cw = canvas.width-100
+    let ch = canvas.height-100
+
+    let xpos = -100
+
+    function plot() {
+      context.clearRect(0, 0, cw, ch)
+
+      context.textAlign = "center"
+
+      for (var i = 0; i < 10; i++) {
+        if (i % 2 == 0) {
+          context.fillStyle = 'rgba(0,0,255,0.6)'
+        } else {
+          context.fillStyle = 'rgba(245, 111, 111, 0.9)'
+        }
+        context.fillRect(i * canvas.width/10, 0, 1, canvas.height)
+        context.fillRect(0, i * canvas.height/10, canvas.width, 1)
+      }
+      let dt = weather.dt
+      let sunrise = weather.sys.sunrise
+      let sunset = weather.sys.sunset
+      let ssd = new Date(sunset*1000)
+      let srd = new Date(sunrise*1000)
+      // console.log(`${srd.getHours()}:${srd.getMinutes()}    ${ssd.getHours()}:${ssd.getMinutes()}`);
+      // console.log(`dt: ${dt}  sr: ${sunrise}  ss: ${sunset}`);
+
+      let positionPercentage
+      //sky hours are 72px wide
+      let time = new Date(weather.dt*1000)
+      let hrs = time.getHours()
+      let daytime = sunrise<dt&&dt<sunset ? true : false
+      // console.log(`daytime: ${daytime}`);
+      let skySx, sunMoonSx
+      if (daytime){
+        skySx = 0
+        sunMoonSx = 0
+        positionPercentage = (dt-sunrise)/(sunset-sunrise)
+      } else {
+        skySx = 900
+        sunMoonSx = 100
+        positionPercentage = (dt-sunset)/(sunset-sunrise)
+      }
+      let dy = positionPercentage<0.5?ch-positionPercentage*ch*2 : 2*(positionPercentage-0.5)*ch
+
+      //draw sky
+      context.drawImage(
+        atlas,
+        skySx,100,900,200,
+        0,0,900,200
+      )
+      //draw sun moon
+      context.drawImage(
+          atlas,
+          sunMoonSx, 0, 100, 100,
+          positionPercentage*cw, dy, 100, 100 //destination coords dest x,y,w,h
+      )
+
+      let wind = Math.round(weather.wind.speed)*0.05
+
+        //draw the clouds
+      for (var i = 0; i < clouds.length; i++) {
+        // console.log(clouds[i].sx);
+
+        clouds[i].vx = wind
+        clouds[i].update()
+        clouds[i].display()//not doing much since it is not animating
+        if (!daytime){
+          let cn = spriteData.frames.find((sprite) => sprite.filename === 'cloudN.png')
+          clouds[i].sx = cn.frame.x
+        }
+        //draw cloud
+        context.drawImage(
+          atlas,
+          clouds[i].sx,clouds[i].sy,clouds[i].spriteW,clouds[i].spriteH,
+          clouds[i].dx,clouds[i].dy,clouds[i].spriteW,clouds[i].spriteH
+        )
+      }
+
+      requestAnimationFrame(plot)
+    }
+    //TODO: create cloud, rain, mist, snow, lightning classes
+    //// TODO: each class should have an update and display method
+    //TODO: setup arrays for each
+    // TODO: eval weather icon to set number of class objects to anim
+    // TODO: loop through each set based of class objects
+  </script>
+</body>
+
+</html>

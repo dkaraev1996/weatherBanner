@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <title></title>
+  <style media="screen">
+    canvas {
+      width: 300px;
+      height: 200px;
+      background-color: rgb(224, 67, 238);
+      position: fixed;
+      z-index: -1;
+      top: 1em;
+      left: 20%;
+    }
+
+  </style>
+</head>
+
+<body>
+  <p></p>
+  <canvas id="canvas" width="300" height="200"></canvas>
+  <script type="text/javascript">
+    // document.body.style.zoom=2.0
+    //https://codebeautify.org/jsonviewer
+    //https://developer.mozilla.org/en-US/docs/Web/API/Geolocation_API
+
+    // let lat=45, lon=-93
+    let lat, lon
+    let p = document.querySelector('p')
+    // https://api.openweathermap.org/data/2.5/weather?zip=55129,us&appid=63339d7600990590e74d0387096d4426&units=imperial
+    //Create an empty object to hold the JSON data
+
+    let weather = {};
+    let temps = []
+    //Create a new xhr object
+    let xhr = new XMLHttpRequest();
+    //Use xhr to load the JSON file
+    // xhr.open("GET", "https://api.openweathermap.org/data/2.5/weather?zip=55129,us&appid=63339d7600990590e74d0387096d4426&units=imperial", true);
+    xhr.open("GET", "https://api.openweathermap.org/data/2.5/forecast/hourly?zip=55129,us&appid=63339d7600990590e74d0387096d4426&units=imperial", true);
+    // xhr.open("GET", `https://api.openweathermap.org/data/2.5/forecast/hourly?lat=${lat}&lon=${lon}&appid=63339d7600990590e74d0387096d4426&units=imperial`, true);
+    //Tell xhr that it's a text file
+    xhr.responseType = 'text';
+    //Create an `onload` callback function that
+    //will handle the file loading
+    let d = new Date()
+    let h = 22//d.getHours()
+
+    xhr.onload = event => {
+      //Check to make sure the file has loaded properly. //`200` means that the load was successful
+      if (xhr.status === 200) {
+        //Copy the JSON file into the `rooms` object
+        weather = JSON.parse(xhr.responseText);
+        console.log("JSON data loaded");
+        console.log(weather);
+        //Now you can use this data to view the library contents
+        console.log(weather.list[10].main.temp);
+        // p.textContent = weather.weather[0].description
+        let str = ""
+        for (var i = h; i < h + 5; i++) {
+          temps.push(Math.round(weather.list[i].main.temp))
+          str += Math.round(weather.list[i].main.temp) + " degrees  " +
+            weather.list[i].weather[0].description + "<br>"
+        }
+        p.innerHTML = str
+        //Check whether the closet's light is on
+        //     if (rooms.closet.light.on === false) {
+        //       console.log("The closet light is off");
+        // }
+        plot()
+      } else {
+        p.textContent = xhr.status
+      }
+    };
+    //Send the request to load the file
+    xhr.send();
+    // navigator.geolocation.getCurrentPosition(function(position) {
+    //   console.log("lat: " + position.coords.latitude + "  lon: " + position.coords.longitude)
+    //   lat = position.coords.latitude
+    //   lon = position.coords.longitude
+    //   // xhr.send();
+    //
+    // }).then( function () {
+    //   xhr.send()
+    // }
+    // )
+    // task().then(result => console.log(result));
+    const canvas = document.querySelector('canvas')
+    const context = canvas.getContext('2d')
+    canvas.width = 600; //horizontal resolution (?) - increase for better looking text
+    canvas.height = 400; //vertical resolution (?) - increase for better looking text
+    canvas.style.width = 300; //actual width of canvas
+    canvas.style.height = 200; //actual height of canvas
+    // function plot() {
+    //   // find avg temp
+    //   // subtract average from actual temp
+    //   // add value to 1/2 of canvas height
+    //   // loop through array and plot the values
+    //   let avgTemp = temps.reduce((a, b) => a + b, 0) / temps.length
+    //   let tempVars = temps.map(x => x - avgTemp)
+    //
+    //   context.beginPath()
+    //   context.textAlign = "center"
+    //   for (var i = 0; i < tempVars.length; i++) {
+    //     if (i % 2 == 0) {
+    //       context.fillStyle = 'rgba(0,0,255,0.3)'
+    //     } else {
+    //       context.fillStyle = 'rgba(255,0,0,0.3)'
+    //     }
+    //     context.fillRect(25 + i * 50, 0, 50, canvas.height)
+    //     context.strokeStyle = 'white'
+    //     context.fillStyle = 'white'
+    //     context.arc(50 + i * 50, canvas.height / 2 - tempVars[i], 5, 0, 2 * Math.PI);
+    //     context.fill()
+    //     context.fillText(temps[i], 50 + i * 50, canvas.height / 2 - tempVars[i] - 15)
+    //     let newH = (h > 12 && h + i <= 24) ? h - 12 + i + " pm" : h - 24 + i + " am"
+    //     console.log(newH);
+    //     context.fillText(newH, 50 + i * 50, canvas.height - 10)
+    //   }
+    //   context.stroke();
+    //   context.fillStyle = "white"
+    //   context.font = 'bold 24px sans-serif'
+    //   context.fillText("Temp Forecast", canvas.width / 2, 28)
+    //   context.font = 'normal 10px sans-serif'
+    // }
+    function plot() {
+      // find avg temp
+      // subtract average from actual temp
+      // add value to 1/2 of canvas height
+      // loop through array and plot the values
+      let avgTemp = temps.reduce((a, b) => a + b, 0) / temps.length
+      let tempVars = temps.map(x => x - avgTemp)
+
+      // context.beginPath()
+      context.textAlign = "center"
+
+      for (var i = 0; i < tempVars.length; i++) {
+        if (i % 2 == 0) {
+          context.fillStyle = 'rgba(0,0,255,0.3)'
+        } else {
+          context.fillStyle = 'rgba(255,0,0,0.3)'
+        }
+        context.fillRect(50 + i * 100, 0, 100, canvas.height)
+      }
+
+      context.strokeStyle = 'white'
+      context.fillStyle = 'white'
+      context.font = 'bold 48px sans-serif'
+      context.fillText("Temp Forecast", canvas.width / 2, 56)
+
+      for (var i = 0; i < tempVars.length; i++) {
+
+        context.beginPath()
+        context.arc(100 + i * 100, canvas.height / 2 - tempVars[i] * 2, 10, 0, 2 * Math.PI);
+        context.fill()
+
+        if (i<tempVars.length-1){
+          context.beginPath(); // Start a new path
+          context.lineWidth = 6
+          context.moveTo(100 + i * 100, canvas.height / 2 - tempVars[i] * 2); // Move the pen to (30, 50)
+          context.lineTo(100 + (i+1) * 100, canvas.height / 2 - tempVars[i+1] * 2); // Draw a line to (150, 100)
+
+          context.stroke();
+        }
+        // context.lineWidth = 1
+        context.font = 'normal 24px sans-serif'
+        context.fillText(temps[i], 100 + i * 100, canvas.height / 2 - tempVars[i] - 30)
+        let newH
+        // if (h+i < 12){
+        //   newH = (h+i) + " AM"
+        // } else {
+        //   // newH = (h+i-12) + " PM"
+        //   newH = (h+i-12 == 0)? "12 PM":(h+i-12) + " PM"
+        // }
+
+        if (h+i==12){
+          newH = "12 PM"
+        } else if ((h+i)%24==0){//(h+i==0 || h+i == 24){
+          newH = "12 AM"
+        } else if (h+i < 12){
+          newH = (h+i) + " AM"
+        } else if (h+i>12 && h+i<24){
+          newH = (h+i-12) + " PM"
+        } else {
+          newH = (h+i-24) + " AM"
+        }
+        // let newH = (h > 12 && h + i <= 24) ? h - 12 + i + " pm" : h - 24 + i + " am"
+        // console.log(newH);
+        context.fillText(newH, 100 + i * 100, canvas.height - 20)
+      }
+      // context.stroke();
+      // context.fillStyle = "white"
+    }
+  </script>
+</body>
+
+</html>
